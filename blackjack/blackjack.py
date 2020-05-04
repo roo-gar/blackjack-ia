@@ -28,6 +28,12 @@ pygame.mixer.init()
 screen = pygame.display.set_mode((800, 480))
 clock = pygame.time.Clock()
 
+PLAYER_LOST = 1
+PLAYER_WON = 2
+PLAYER_LOST_DOUBLE = 3
+PLAYER_WON_DOUBLE = 4
+DRAW = 5
+
 ###### SYSTEM FUNCTIONS BEGIN #######
 def imageLoad(name, card):
     """ Function for loading an image. Makes sure the game is compatible across multiple OS'es, as it
@@ -295,20 +301,24 @@ def mainGame():
             moneyGained = bet
             deck, playerHand, dealerHand, deadDeck, funds, roundEnd = endRound(deck, playerHand, dealerHand, deadDeck, funds, bet, 0, cards, cardSprite)
             displayFont = display(textFont, "You won $%.2f." %(bet))
+            hand_result = PLAYER_WON
         elif playerValue == dealerValue and playerValue <= 21:
             # Tie
             deck, playerHand, dealerHand, deadDeck, funds, roundEnd = endRound(deck, playerHand, dealerHand, deadDeck, funds, 0, 0, cards, cardSprite)
             displayFont = display(textFont, "It's a push!")
+            hand_result = DRAW
         elif dealerValue > 21 and playerValue <= 21:
             # Dealer has busted and player hasn't
             deck, playerHand, dealerHand, deadDeck, funds, roundEnd = endRound(deck, playerHand, dealerHand, deadDeck, funds, bet, 0, cards, cardSprite)
             displayFont = display(textFont, "Dealer busts! You won $%.2f." %(bet))
+            hand_result = PLAYER_WON
         else:
             # Dealer wins in every other siutation taht i can think of
             deck, playerHand, dealerHand, deadDeck, funds, roundEnd = endRound(deck, playerHand, dealerHand, deadDeck, funds, 0, bet, cards, cardSprite)
             displayFont = display(textFont, "Dealer wins! You lost $%.2f." %(bet))
+            hand_result = PLAYER_LOST
             
-        return deck, deadDeck, roundEnd, funds, displayFont
+        return deck, deadDeck, roundEnd, funds, displayFont, hand_result
     ######## DECK FUNCTIONS END ########  
     
     ######## SPRITE FUNCTIONS BEGIN ##########
@@ -370,11 +380,12 @@ def mainGame():
             self.position = (735, 365)
             self.rect.center = self.position
             
+            hand_result = None
             if a_stand:
                 if roundEnd == 0: 
-                    deck, deadDeck, roundEnd, funds, displayFont = compareHands(deck, deadDeck, playerHand, dealerHand, funds, bet, cards, cardSprite)
+                    deck, deadDeck, roundEnd, funds, displayFont, hand_result = compareHands(deck, deadDeck, playerHand, dealerHand, funds, bet, cards, cardSprite)
                 
-            return deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos, displayFont 
+            return deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos, displayFont, hand_result
             
     class doubleButton(pygame.sprite.Sprite):
         """ Button that allows player to double (double the bet, take one more card, then stand)."""
@@ -392,7 +403,8 @@ def mainGame():
                 
             self.position = (735, 330)
             self.rect.center = self.position
-                
+            
+            hand_result = None
             if a_double:
                 if roundEnd == 0 and funds >= bet * 2 and len(playerHand) == 2: 
                     bet = bet * 2
@@ -404,11 +416,15 @@ def mainGame():
                     playerCards.add(card)
                     pCardPos = (pCardPos[0] - 80, pCardPos[1])
         
-                    deck, deadDeck, roundEnd, funds, displayFont = compareHands(deck, deadDeck, playerHand, dealerHand, funds, bet, cards, cardSprite)
-                    
+                    deck, deadDeck, roundEnd, funds, displayFont, hand_result = compareHands(deck, deadDeck, playerHand, dealerHand, funds, bet, cards, cardSprite)
+                    if hand_result == PLAYER_WON:
+                        hand_result = PLAYER_WON_DOUBLE
+                    elif hand_result == PLAYER_LOST:
+                        hand_result = PLAYER_LOST_DOUBLE
+
                     bet = bet / 2
 
-            return deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos, displayFont, bet
+            return deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos, displayFont, bet, hand_result
 
     class dealButton(pygame.sprite.Sprite):
         """ A button on the right hand side of the screen that can be clicked at the end of a round to deal a
@@ -498,6 +514,9 @@ def mainGame():
     # so that Python doesn't get confused
     playerHand, dealerHand, dCardPos, pCardPos = [],[],(),()
 
+    # Hand result
+    hand_result = None
+
     # The default funds start at $100.00, and the initial bet defaults to $10.00
     funds = 200.00
     bet = 10.00
@@ -567,10 +586,10 @@ def mainGame():
                 print(playerHand)
             elif action == "s":
                 print("stand")
-                deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos, displayFont  = standButton.update(True, deck, deadDeck, playerHand, dealerHand, cards, pCardPos, roundEnd, cardSprite, funds, bet, displayFont)
+                deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos, displayFont, hand_result  = standButton.update(True, deck, deadDeck, playerHand, dealerHand, cards, pCardPos, roundEnd, cardSprite, funds, bet, displayFont)
             elif action == "b":
                 print("double")
-                deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos, displayFont, bet  = doubleButton.update(True, deck, deadDeck, playerHand, dealerHand, playerCards, cards, pCardPos, roundEnd, cardSprite, funds, bet, displayFont)
+                deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos, displayFont, bet, hand_result  = doubleButton.update(True, deck, deadDeck, playerHand, dealerHand, playerCards, cards, pCardPos, roundEnd, cardSprite, funds, bet, displayFont)
         
         # Initial check for the value of the player's hand, so that his hand can be displayed and it can be determined
         # if the player busts or has blackjack or not
@@ -582,16 +601,28 @@ def mainGame():
             if playerValue == 21 and len(playerHand) == 2:
                 # If the player gets blackjack
                 displayFont, playerHand, dealerHand, deadDeck, funds, roundEnd = blackJack(deck, deadDeck, playerHand, dealerHand, funds,  bet, cards, cardSprite)
-                
+                hand_result = PLAYER_WON
             if dealerValue == 21 and len(dealerHand) == 2:
                 # If the dealer has blackjack
                 displayFont, playerHand, dealerHand, deadDeck, funds, roundEnd = blackJack(deck, deadDeck, playerHand, dealerHand, funds,  bet, cards, cardSprite)
-
+                hand_result = PLAYER_LOST
             if playerValue > 21:
                 # If player busts
                 deck, playerHand, dealerHand, deadDeck, funds, roundEnd, displayFont = bust(deck, playerHand, dealerHand, deadDeck, funds, 0, bet, cards, cardSprite)        
-
-        sleep(3.5)    
+                hand_result = PLAYER_LOST
+        
+        if roundEnd:
+            if hand_result == PLAYER_WON:
+                print("player won")
+            elif hand_result == PLAYER_LOST:
+                print("player lost")
+            elif hand_result == DRAW:
+                print("draw")
+            elif hand_result == PLAYER_WON_DOUBLE:
+                print("player won double")
+            elif hand_result == PLAYER_LOST_DOUBLE:
+                print("player lost double")
+        sleep(0.3)    
 
     ###### MAIN GAME LOOP ENDS ######
 ###### MAIN GAME FUNCTION ENDS ######
