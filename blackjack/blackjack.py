@@ -526,6 +526,13 @@ def mainGame():
             # When the player hasn't started. Will only be displayed the first time.
             displayFont = display(textFont, "Click on the arrows to declare your bet, then deal to start the game.")
             firstTime = 0
+
+            # Draw buttons by updating them
+            dealButton.update(False, deck, deadDeck, roundEnd, cardSprite, cards, playerHand, dealerHand, dCardPos, pCardPos, displayFont, playerCards, handsPlayed)      
+            hitButton.update(False, deck, deadDeck, playerHand, playerCards, pCardPos, roundEnd, cardSprite)
+            standButton.update(False, deck, deadDeck, playerHand, dealerHand, cards, pCardPos, roundEnd, cardSprite, funds, bet, displayFont)
+            doubleButton.update(False, deck, deadDeck, playerHand, dealerHand, playerCards, cards, pCardPos, roundEnd, cardSprite, funds, bet, displayFont)
+
             
         # Show the blurb at the bottom of the screen, how much money left, and current bet    
         screen.blit(displayFont, (10,444))
@@ -534,10 +541,37 @@ def mainGame():
         betFont = pygame.font.Font.render(textFont, "Bet: $%.2f" %(bet), 1, (255,255,255), (0,0,0))
         screen.blit(betFont, (680,285))
         hpFont = pygame.font.Font.render(textFont, "Round: %i " %(handsPlayed), 1, (255,255,255), (0,0,0))
-        screen.blit(hpFont, (663, 180))
+        screen.blit(hpFont, (663, 180))   
 
+        buttons.draw(screen)
+         
+        # If there are cards on the screen, draw them    
+        if len(cards) is not 0:
+            playerCards.update()
+            playerCards.draw(screen)
+            cards.update()
+            cards.draw(screen)
+
+        # Updates the contents of the display
+        pygame.display.flip()   
+
+        if roundEnd:
+            print("deal")
+            deck, deadDeck, playerHand, dealerHand, dCardPos, pCardPos, roundEnd, displayFont, handsPlayed = dealButton.update(True, deck, deadDeck, roundEnd, cardSprite, cards, playerHand, dealerHand, dCardPos, pCardPos, displayFont, playerCards, handsPlayed)
+            print(playerHand, dealerHand)
+        else: 
+            action = random.choice(["h", "s", "b"])  
+            if action == "h":
+                print("hit")
+                deck, deadDeck, playerHand, pCardPos = hitButton.update(True, deck, deadDeck, playerHand, playerCards, pCardPos, roundEnd, cardSprite)
+                print(playerHand)
+            elif action == "s":
+                print("stand")
+                deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos, displayFont  = standButton.update(True, deck, deadDeck, playerHand, dealerHand, cards, pCardPos, roundEnd, cardSprite, funds, bet, displayFont)
+            elif action == "b":
+                print("double")
+                deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos, displayFont, bet  = doubleButton.update(True, deck, deadDeck, playerHand, dealerHand, playerCards, cards, pCardPos, roundEnd, cardSprite, funds, bet, displayFont)
         
- 
         # Initial check for the value of the player's hand, so that his hand can be displayed and it can be determined
         # if the player busts or has blackjack or not
         if roundEnd == 0:
@@ -557,44 +591,7 @@ def mainGame():
                 # If player busts
                 deck, playerHand, dealerHand, deadDeck, funds, roundEnd, displayFont = bust(deck, playerHand, dealerHand, deadDeck, funds, 0, bet, cards, cardSprite)        
 
-        # Update the buttons 
-         # deal 
-        deck, deadDeck, playerHand, dealerHand, dCardPos, pCardPos, roundEnd, displayFont, handsPlayed = dealButton.update(False, deck, deadDeck, roundEnd, cardSprite, cards, playerHand, dealerHand, dCardPos, pCardPos, displayFont, playerCards, handsPlayed)   
-        # hit    
-        deck, deadDeck, playerHand, pCardPos = hitButton.update(False, deck, deadDeck, playerHand, playerCards, pCardPos, roundEnd, cardSprite)
-        # stand    
-        deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos,  displayFont  = standButton.update(False, deck, deadDeck, playerHand, dealerHand, cards, pCardPos, roundEnd, cardSprite, funds, bet, displayFont)
-        # double
-        deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos, displayFont, bet  = doubleButton.update(False, deck, deadDeck, playerHand, dealerHand, playerCards, cards, pCardPos, roundEnd, cardSprite, funds, bet, displayFont)
-
-        buttons.draw(screen)
-         
-        # If there are cards on the screen, draw them    
-        if len(cards) is not 0:
-            playerCards.update()
-            playerCards.draw(screen)
-            cards.update()
-            cards.draw(screen)
-
-        # Updates the contents of the display
-        pygame.display.flip()
-
-        action = random.choice(["h", "s", "b"])     
-
-        if roundEnd:
-            print("deal")
-            deck, deadDeck, playerHand, dealerHand, dCardPos, pCardPos, roundEnd, displayFont, handsPlayed = dealButton.update(True, deck, deadDeck, roundEnd, cardSprite, cards, playerHand, dealerHand, dCardPos, pCardPos, displayFont, playerCards, handsPlayed)
-        else: 
-            if action == "h":
-                print("hit")
-                deck, deadDeck, playerHand, pCardPos = hitButton.update(True, deck, deadDeck, playerHand, playerCards, pCardPos, roundEnd, cardSprite)
-            elif action == "s":
-                print("stand")
-                deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos,  displayFont  = standButton.update(True, deck, deadDeck, playerHand, dealerHand, cards, pCardPos, roundEnd, cardSprite, funds, bet, displayFont)
-            elif action == "b":
-                print("double")
-                deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos, displayFont, bet  = doubleButton.update(True, deck, deadDeck, playerHand, dealerHand, playerCards, cards, pCardPos, roundEnd, cardSprite, funds, bet, displayFont)
-        sleep(3.0)    
+        sleep(3.5)    
 
     ###### MAIN GAME LOOP ENDS ######
 ###### MAIN GAME FUNCTION ENDS ######
