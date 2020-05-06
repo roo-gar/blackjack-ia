@@ -16,6 +16,8 @@
 
 from time import sleep
 
+from ia import get_action, process_result
+
 import random
 import os
 import sys
@@ -28,6 +30,14 @@ pygame.mixer.init()
 screen = pygame.display.set_mode((800, 480))
 clock = pygame.time.Clock()
 
+# LIST POSSIBLE ACTIONS
+HIT = 0
+STAND = 1
+DOUBLE = 2
+
+
+# LIST POSSIBLE OUTCOMES
+NO_RESULT_YET = 0
 PLAYER_LOST = 1
 PLAYER_WON = 2
 PLAYER_LOST_DOUBLE = 3
@@ -36,14 +46,12 @@ DRAW = 5
 
 ###### SYSTEM FUNCTIONS BEGIN #######
 def imageLoad(name, card):
-    """ Function for loading an image. Makes sure the game is compatible across multiple OS'es, as it
-    uses the os.path.join function to get he full filename. It then tries to load the image,
-    and raises an exception if it can't, so the user will know specifically what's going if the image loading
-    does not work. """
+    """ Function for loading an image. Raises an exception if it can't."""
     
     if card == 1:
         fullname = os.path.join("images/cards/", name)
-    else: fullname = os.path.join('images', name)
+    else: 
+        fullname = os.path.join('images', name)
     
     try:
         image = pygame.image.load(fullname)
@@ -65,7 +73,6 @@ def display(font, sentence):
 
 ###### MAIN GAME FUNCTION BEGINS ######
 def mainGame():
-    """ Function that contains all the game logic. """
     
     def gameOver():
         """ Displays a game over screen in its own little loop. It is called when it has been determined that the player's funds have
@@ -575,54 +582,45 @@ def mainGame():
         pygame.display.flip()   
 
         if roundEnd:
-            print("deal")
+            print("\ndeal")
             deck, deadDeck, playerHand, dealerHand, dCardPos, pCardPos, roundEnd, displayFont, handsPlayed = dealButton.update(True, deck, deadDeck, roundEnd, cardSprite, cards, playerHand, dealerHand, dCardPos, pCardPos, displayFont, playerCards, handsPlayed)
-            print(playerHand, dealerHand)
-        else: 
-            action = random.choice(["h", "s", "b"])  
-            if action == "h":
-                print("hit")
-                deck, deadDeck, playerHand, pCardPos = hitButton.update(True, deck, deadDeck, playerHand, playerCards, pCardPos, roundEnd, cardSprite)
-                print(playerHand)
-            elif action == "s":
-                print("stand")
-                deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos, displayFont, hand_result  = standButton.update(True, deck, deadDeck, playerHand, dealerHand, cards, pCardPos, roundEnd, cardSprite, funds, bet, displayFont)
-            elif action == "b":
-                print("double")
-                deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos, displayFont, bet, hand_result  = doubleButton.update(True, deck, deadDeck, playerHand, dealerHand, playerCards, cards, pCardPos, roundEnd, cardSprite, funds, bet, displayFont)
-        
-        # Initial check for the value of the player's hand, so that his hand can be displayed and it can be determined
-        # if the player busts or has blackjack or not
-        if roundEnd == 0:
-            # Stuff to do when the game is happening 
+
+            # Initial check for the value of the player's hand, so that his hand can be displayed and it can be determined
+            # if the player busts or has blackjack or not
             playerValue = checkValue(playerHand)
             dealerValue = checkValue(dealerHand)
     
             if playerValue == 21 and len(playerHand) == 2:
                 # If the player gets blackjack
                 displayFont, playerHand, dealerHand, deadDeck, funds, roundEnd = blackJack(deck, deadDeck, playerHand, dealerHand, funds,  bet, cards, cardSprite)
-                hand_result = PLAYER_WON
+                #hand_result = PLAYER_WON_BLACK
             if dealerValue == 21 and len(dealerHand) == 2:
                 # If the dealer has blackjack
                 displayFont, playerHand, dealerHand, deadDeck, funds, roundEnd = blackJack(deck, deadDeck, playerHand, dealerHand, funds,  bet, cards, cardSprite)
-                hand_result = PLAYER_LOST
-            if playerValue > 21:
+                #hand_result = PLAYER_LOST
+
+        else: 
+            action = get_action(playerHand, dealerHand[0])
+            if action == HIT:
+                print("hit")                
+                deck, deadDeck, playerHand, pCardPos = hitButton.update(True, deck, deadDeck, playerHand, playerCards, pCardPos, roundEnd, cardSprite)
+                playerValue = checkValue(playerHand)
+                if playerValue > 21:
                 # If player busts
-                deck, playerHand, dealerHand, deadDeck, funds, roundEnd, displayFont = bust(deck, playerHand, dealerHand, deadDeck, funds, 0, bet, cards, cardSprite)        
-                hand_result = PLAYER_LOST
-        
-        if roundEnd:
-            if hand_result == PLAYER_WON:
-                print("player won")
-            elif hand_result == PLAYER_LOST:
-                print("player lost")
-            elif hand_result == DRAW:
-                print("draw")
-            elif hand_result == PLAYER_WON_DOUBLE:
-                print("player won double")
-            elif hand_result == PLAYER_LOST_DOUBLE:
-                print("player lost double")
-        sleep(0.3)    
+                    deck, playerHand, dealerHand, deadDeck, funds, roundEnd, displayFont = bust(deck, playerHand, dealerHand, deadDeck, funds, 0, bet, cards, cardSprite)        
+                    hand_result = PLAYER_LOST
+                else:
+                    hand_result = NO_RESULT_YET
+            elif action == STAND:
+                print("stand")
+                deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos, displayFont, hand_result  = standButton.update(True, deck, deadDeck, playerHand, dealerHand, cards, pCardPos, roundEnd, cardSprite, funds, bet, displayFont)
+            elif action == DOUBLE:
+                print("double")
+                deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos, displayFont, bet, hand_result  = doubleButton.update(True, deck, deadDeck, playerHand, dealerHand, playerCards, cards, pCardPos, roundEnd, cardSprite, funds, bet, displayFont)
+            process_result(hand_result)
+            
+
+        sleep(0.2)
 
     ###### MAIN GAME LOOP ENDS ######
 ###### MAIN GAME FUNCTION ENDS ######
