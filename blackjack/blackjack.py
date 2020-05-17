@@ -526,7 +526,7 @@ def mainGame():
     hand_result = None
 
     # The default funds start at $100.00, and the initial bet defaults to $10.00
-    funds = 50000.00
+    funds = 6000.00
     bet = 10.00
 
     # This is a counter that counts the number of rounds played in a given session
