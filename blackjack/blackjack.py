@@ -16,7 +16,7 @@
 
 from time import sleep
 
-from ia import get_action, process_result
+from ia import get_action, process_result, on_game_start
 
 import random
 import os
@@ -141,7 +141,8 @@ def mainGame():
     def deckDeal(deck, deadDeck):
         """ Shuffles the deck, takes the top 4 cards off the deck, appends them to the player's and dealer's hands, and
         returns the player's and dealer's hands. """
-
+        deck = createDeck() #added
+        deadDeck = [] #added
         deck = shuffle(deck)
         dealerHand, playerHand = [], []
 
@@ -525,7 +526,7 @@ def mainGame():
     hand_result = None
 
     # The default funds start at $100.00, and the initial bet defaults to $10.00
-    funds = 200.00
+    funds = 50000.00
     bet = 10.00
 
     # This is a counter that counts the number of rounds played in a given session
@@ -582,7 +583,7 @@ def mainGame():
         pygame.display.flip()   
 
         if roundEnd:
-            print("\ndeal")
+            on_game_start(handsPlayed + 1, funds)
             deck, deadDeck, playerHand, dealerHand, dCardPos, pCardPos, roundEnd, displayFont, handsPlayed = dealButton.update(True, deck, deadDeck, roundEnd, cardSprite, cards, playerHand, dealerHand, dCardPos, pCardPos, displayFont, playerCards, handsPlayed)
 
             # Initial check for the value of the player's hand, so that his hand can be displayed and it can be determined
@@ -601,8 +602,7 @@ def mainGame():
 
         else: 
             action = get_action(playerHand, dealerHand[0])
-            if action == HIT:
-                print("hit")                
+            if action == HIT:              
                 deck, deadDeck, playerHand, pCardPos = hitButton.update(True, deck, deadDeck, playerHand, playerCards, pCardPos, roundEnd, cardSprite)
                 playerValue = checkValue(playerHand)
                 if playerValue > 21:
@@ -612,15 +612,12 @@ def mainGame():
                 else:
                     hand_result = NO_RESULT_YET
             elif action == STAND:
-                print("stand")
                 deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos, displayFont, hand_result  = standButton.update(True, deck, deadDeck, playerHand, dealerHand, cards, pCardPos, roundEnd, cardSprite, funds, bet, displayFont)
             elif action == DOUBLE:
-                print("double")
                 deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos, displayFont, bet, hand_result  = doubleButton.update(True, deck, deadDeck, playerHand, dealerHand, playerCards, cards, pCardPos, roundEnd, cardSprite, funds, bet, displayFont)
             process_result(hand_result)
             
 
-        sleep(0.2)
 
     ###### MAIN GAME LOOP ENDS ######
 ###### MAIN GAME FUNCTION ENDS ######

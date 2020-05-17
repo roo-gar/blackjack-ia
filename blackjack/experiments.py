@@ -1,12 +1,9 @@
 from time import sleep
 
-import math
 import random
 
-
-
-GAMMA = 0.9
-K = 2
+GAMMA = 0.5
+K = 0.8
 
 
 # LIST POSSIBLE ACTIONS
@@ -21,8 +18,6 @@ PLAYER_WON = 2
 PLAYER_LOST_DOUBLE = 3
 PLAYER_WON_DOUBLE = 4
 DRAW = 5
-
-
 
 class State:
 
@@ -56,8 +51,8 @@ class QMatrix:
 
     def __init__(self):
         self.entries = []
-        for p in range(2, 22):
-            for q in range(1, 11):
+        for p in range(2, 21):
+            for q in range(1, 10):
                 self.entries.append(QMatrixEntry(State(p, q), HIT, 0))
                 self.entries.append(QMatrixEntry(State(p, q), STAND, 0))
                 self.entries.append(QMatrixEntry(State(p, q), DOUBLE, 0))
@@ -68,24 +63,15 @@ class QMatrix:
                 return q_matrix_entry
 
     def get_probability(self, state, action, possible_actions):
+        log("{}, {}, {}".format(state, action, possible_actions))
         k_current_reward = K ** self.get_entry(state, action).reward
         k_sum_rewards = sum([K ** self.get_entry(state, action).reward for action in possible_actions])
 
-        return k_current_reward / k_sum_rewards
-
-    def get_max_reward(self, state, possible_actions):
-        max_reward = self.get_entry(state, possible_actions[0]).reward
-
-        for action in possible_actions:
-            current_entry_reward = self.get_entry(state, action).reward
-
-            if current_entry_reward > max_reward:
-                max_reward = current_entry_reward
-
-        return max_reward
+        return current_reward / sum_rewards
 
 
 QM = QMatrix()
+current_state, current_action = None, None
 previous_state, previous_action, previous_hand_result = None, None, None
 
 LOG = True
@@ -93,6 +79,7 @@ LOG = True
 def log(msg):
     if LOG:
         print(msg)
+        sleep(3.0)
 
 
 def get_card_value(card_value):
@@ -107,8 +94,8 @@ def get_state(player_hand, dealer_hand):
 
 
 def random_choice(elements, weights):
-    log("actions: {}".format(elements))
-    log("weights: {}".format(weights))
+    log("actions: {}", elements)
+    log("weights: {}", elements)
     element_chosen = elements[-1]
     random_number = random.random()
     log("random: {}".format(random_number))
@@ -116,7 +103,7 @@ def random_choice(elements, weights):
     for i in range(len(weights)):
         suma += weights[i]
         if random_number < suma:
-            return elements[i]
+            return element_chosen
     return element_chosen
 
 
@@ -125,41 +112,39 @@ def get_reward(hand_result):
     return rewards[hand_result]
 
 
-def update_matrix(new_state, possible_actions):
-    if not previous_state:
-        log("Nothing to update")
+def update_matrix(possible_actions):
+    if not (previous_state and current_state and previous_action and current_action and previous_hand_result):
         return
     
     entry_to_update = QM.get_entry(previous_state, previous_action)
     print("Before update: {}".format(entry_to_update))
-    alpha = 1.0 / (1 + entry_to_update.visits)
+    entry_to_update.visit()
+    alpha = 1 / (1 + entry_to_update.visits)
 
     if previous_hand_result == NO_RESULT_YET:
-        max_reward = QM.get_max_reward(new_state, possible_actions)
+        max_reward = get_max_reward(current_state, possible_actions)
         entry_to_update.reward = (1 - alpha) * entry_to_update.reward + alpha * math.floor(get_reward(previous_hand_result) + GAMMA * max_reward)
     else:
         entry_to_update.reward = (1 - alpha) * entry_to_update.reward + alpha * get_reward(previous_hand_result)
-    entry_to_update.visit()
     print("After update: {}".format(entry_to_update))
 
 
 # Method called by the game to request the next action
 def get_action(player_hand, dealer_hand):
-    global previous_state, previous_action
-    update_matrix(get_state(player_hand, dealer_hand), [HIT, STAND, DOUBLE] if len(player_hand) == 2 else [HIT, STAND])
-
+    global previous_state, current_state, previous_action, current_action
     log("Player hand: {}, dealer_hand: {}".format(player_hand, dealer_hand))
 
+    previous_state = current_state
     current_state =  get_state(player_hand, dealer_hand)
     log("Current State: {}".format(current_state))
 
+    previous_action = current_action
     possible_actions = [HIT, STAND, DOUBLE] if len(player_hand) == 2 else [HIT, STAND]
     actions_probabilities = [QM.get_probability(current_state, action, possible_actions) for action in possible_actions]
     current_action = random_choice(possible_actions, actions_probabilities)
-    log("Chosen Action: {}".format("HIT" if current_action == 0 else ("STAND" if current_action == 1 else "DOUBLE")))
-    
-    previous_state = current_state
-    previous_action = current_action
+    log("Current Action: {}".format(current_action))
+    update_matrix(possible_actions)
+
     return current_action
 
 
@@ -167,31 +152,20 @@ def get_action(player_hand, dealer_hand):
 def process_result(hand_result):
     global previous_hand_result
     previous_hand_result = hand_result
-    results_name = ["NO_RESULT_YET", "PLAYER_LOST", "PLAYER_WON" , "PLAYER_LOST_DOUBLE", "PLAYER_WON_DOUBLE", "DRAW"]
-    log("Result: {}".format(results_name[hand_result]))
 
 
 # Method called by the game every time a new hand is deal
 def on_game_start(handsPlayed, funds):
-    global K
-    if handsPlayed == 100:
-        K = 3
-    if handsPlayed == 500:
-        K = 5
-    if handsPlayed == 1000:
-        K = 50
-    if handsPlayed == 2000:
-        K = 100   
-
-    log("\nHand #{}: ${}".format(handsPlayed, funds))
+    log("Hand #{}: ${}".format(handsPlayed, funds))
 
     with open("funds.txt", "a") as file: 
-        file.write("{}\n".format(funds))
+        file.write("{}, {}\n".format(handsPlayed, funds))
 
-#"""
 
-""" random strategy
+""" Random strategy 
 def get_action(player_hand, dealer_hand):
+    state = get_state(player_hand, dealer_hand)
+
     if len(player_hand) == 2:
         return random.choice([HIT, STAND, DOUBLE])
     return random.choice([HIT, STAND])
@@ -209,26 +183,18 @@ def process_result(hand_result):
         print("player won double")
     elif hand_result == PLAYER_LOST_DOUBLE:
         print("player lost double")
-
-def on_game_start(handsPlayed, funds):
-    print("\nHand #{}: ${}".format(handsPlayed, funds))
-
-    with open("funds.txt", "a") as file: 
-        file.write("{}\n".format(funds))
 """
 
-""" stand less than 16 strategy
-
-def get_card_value(card_value):
-    return 1 if card_value == 'a' else 10 if card_value in ['j', 'q', 'k'] else int(card_value)
-
-
+s1 = State(2, 2)
+s2 = State(2, 2)
+print(s1 == s2)
+""" Random strategy 
 def get_action(player_hand, dealer_hand):
-    player_hand_value = sum([get_card_value(card[1:len(card)]) for card in player_hand])
-    if player_hand_value < 16:
-        return HIT
-    else:
-        return STAND
+    state = get_state(player_hand, dealer_hand)
+
+    if len(player_hand) == 2:
+        return random.choice([HIT, STAND, DOUBLE])
+    return random.choice([HIT, STAND])
 
 def process_result(hand_result):
     if hand_result == NO_RESULT_YET:
@@ -243,10 +209,4 @@ def process_result(hand_result):
         print("player won double")
     elif hand_result == PLAYER_LOST_DOUBLE:
         print("player lost double")
-
-def on_game_start(handsPlayed, funds):
-    print("\nHand #{}: ${}".format(handsPlayed, funds))
-
-    with open("funds.txt", "a") as file: 
-        file.write("{}\n".format(funds))
 """
