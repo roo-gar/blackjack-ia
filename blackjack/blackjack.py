@@ -582,6 +582,7 @@ def mainGame():
         # Updates the contents of the display
         pygame.display.flip()   
 
+        sleep(2.0)
         if roundEnd:
             on_game_start(handsPlayed + 1, funds)
             deck, deadDeck, playerHand, dealerHand, dCardPos, pCardPos, roundEnd, displayFont, handsPlayed = dealButton.update(True, deck, deadDeck, roundEnd, cardSprite, cards, playerHand, dealerHand, dCardPos, pCardPos, displayFont, playerCards, handsPlayed)
@@ -616,7 +617,7 @@ def mainGame():
             elif action == DOUBLE:
                 deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos, displayFont, bet, hand_result  = doubleButton.update(True, deck, deadDeck, playerHand, dealerHand, playerCards, cards, pCardPos, roundEnd, cardSprite, funds, bet, displayFont)
             process_result(hand_result)
-            
+
 
 
     ###### MAIN GAME LOOP ENDS ######

@@ -191,9 +191,11 @@ def on_game_start(handsPlayed, funds):
         #sleep(5)
 
     log("\nHand #{}: ${}".format(handsPlayed, funds))
+    """
     if handsPlayed % 50 == 0:
         with open("funds.txt", "a") as file: 
             file.write("{}\n".format(funds))
+    """
 
 
 
