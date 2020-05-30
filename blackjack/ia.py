@@ -1,13 +1,11 @@
-from time import sleep
 from tabulate import tabulate
 
+import json
 import math
 import random
 
-
 GAMMA = 0.9
 K = 1.05
-
 
 # LIST POSSIBLE ACTIONS
 HIT = 0
@@ -86,17 +84,29 @@ class QMatrix:
     def pretty_print(self):
         headers, table = ['', 'HIT', 'STAND', 'DOUBLE'], []
 
+        data = {'states': []}
         for i in range(0, len(self.entries), 3):
             table.append(['state({}, {})'.format(self.entries[i].state.p, self.entries[i].state.q),
                           self.entries[i].reward, self.entries[i + 1].reward, self.entries[i + 2].reward])
 
+            data['states'].append({
+                'state': [self.entries[i].state.p, self.entries[i].state.q],
+                'hit': self.entries[i].reward,
+                'stand': self.entries[i + 1].reward,
+                'double': self.entries[i + 2].reward
+            })
+
         print tabulate(table, headers, tablefmt="fancy_grid")
+
+        with open('./json/q_table.json', 'w') as file:
+            json.dump(data, file)
 
 
 QM = QMatrix()
 previous_state, previous_action, previous_hand_result = None, None, None
 
 LOG = True
+
 
 def log(msg):
     if LOG:
@@ -130,7 +140,8 @@ def random_choice(elements, weights):
 
 
 def get_reward(hand_result):
-    rewards = {NO_RESULT_YET: 0, PLAYER_WON: 10, PLAYER_LOST: -10, DRAW: 0, PLAYER_WON_DOUBLE: 20, PLAYER_LOST_DOUBLE: -20}
+    rewards = {NO_RESULT_YET: 0, PLAYER_WON: 10, PLAYER_LOST: -10, DRAW: 0, PLAYER_WON_DOUBLE: 20,
+               PLAYER_LOST_DOUBLE: -20}
     return rewards[hand_result]
 
 
@@ -138,7 +149,7 @@ def update_matrix(new_state, possible_actions):
     if not previous_state:
         log("Nothing to update")
         return
-    
+
     entry_to_update = QM.get_entry(previous_state, previous_action)
     print("Before update: {}".format(entry_to_update))
     alpha = 1.0 / (1 + entry_to_update.visits)
@@ -146,7 +157,8 @@ def update_matrix(new_state, possible_actions):
 
     if previous_hand_result == NO_RESULT_YET:
         max_reward = QM.get_max_reward(new_state, possible_actions)
-        entry_to_update.reward = (1 - alpha) * entry_to_update.reward + alpha * math.floor(get_reward(previous_hand_result) + GAMMA * max_reward)
+        entry_to_update.reward = (1 - alpha) * entry_to_update.reward + alpha * math.floor(
+            get_reward(previous_hand_result) + GAMMA * max_reward)
     else:
         entry_to_update.reward = (1 - alpha) * entry_to_update.reward + alpha * get_reward(previous_hand_result)
     entry_to_update.visit()
@@ -160,7 +172,7 @@ def get_action(player_hand, dealer_hand):
 
     log("Player hand: {}, dealer_hand: {}".format(player_hand, dealer_hand))
 
-    current_state =  get_state(player_hand, dealer_hand)
+    current_state = get_state(player_hand, dealer_hand)
     log("Current State: {}".format(current_state))
 
     possible_actions = [HIT, STAND, DOUBLE] if len(player_hand) == 2 else [HIT, STAND]
@@ -177,7 +189,7 @@ def get_action(player_hand, dealer_hand):
 def process_result(hand_result):
     global previous_hand_result
     previous_hand_result = hand_result
-    results_name = ["NO_RESULT_YET", "PLAYER_LOST", "PLAYER_WON" , "PLAYER_LOST_DOUBLE", "PLAYER_WON_DOUBLE", "DRAW"]
+    results_name = ["NO_RESULT_YET", "PLAYER_LOST", "PLAYER_WON", "PLAYER_LOST_DOUBLE", "PLAYER_WON_DOUBLE", "DRAW"]
     log("Result: {}".format(results_name[hand_result]))
 
 
@@ -188,7 +200,7 @@ def on_game_start(handsPlayed, funds):
     if handsPlayed % 100 == 0:
         K += 0.03
         QM.pretty_print()
-        #sleep(5)
+        # sleep(5)
 
     log("\nHand #{}: ${}".format(handsPlayed, funds))
     """
@@ -196,7 +208,6 @@ def on_game_start(handsPlayed, funds):
         with open("funds.txt", "a") as file: 
             file.write("{}\n".format(funds))
     """
-
 
 
 """ random strategy
