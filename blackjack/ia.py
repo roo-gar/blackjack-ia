@@ -100,7 +100,8 @@ LOG = True
 
 def log(msg):
     if LOG:
-        print(msg)
+        with open("log.txt", "a") as file: 
+            file.write("{}\n".format(msg))
 
 
 def get_card_value(card_value):
@@ -140,7 +141,7 @@ def update_matrix(new_state, possible_actions):
         return
     
     entry_to_update = QM.get_entry(previous_state, previous_action)
-    print("Before update: {}".format(entry_to_update))
+    log("Before update: {}".format(entry_to_update))
     alpha = 1.0 / (1 + entry_to_update.visits)
     log("Alpha: " + str(alpha))
 
@@ -150,7 +151,7 @@ def update_matrix(new_state, possible_actions):
     else:
         entry_to_update.reward = (1 - alpha) * entry_to_update.reward + alpha * get_reward(previous_hand_result)
     entry_to_update.visit()
-    print("After update: {}".format(entry_to_update))
+    log("After update: {}".format(entry_to_update))
 
 
 # Method called by the game to request the next action
@@ -187,6 +188,7 @@ def on_game_start(handsPlayed, funds):
 
     if handsPlayed % 100 == 0:
         K += 0.03
+        print("Table hand " + str(handsPlayed))
         QM.pretty_print()
         #sleep(5)
 

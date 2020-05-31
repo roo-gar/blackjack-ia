@@ -44,6 +44,10 @@ PLAYER_LOST_DOUBLE = 3
 PLAYER_WON_DOUBLE = 4
 DRAW = 5
 
+# NUM DECKS
+NUM_DECKS = 2
+SHUFFLE_THRESHOLD = int(NUM_DECKS * 52 * random.uniform(0.25, 0.75))
+
 ###### SYSTEM FUNCTIONS BEGIN #######
 def imageLoad(name, card):
     """ Function for loading an image. Raises an exception if it can't."""
@@ -114,17 +118,22 @@ def mainGame():
     def createDeck():
         """ Creates a default deck which contains all 52 cards and returns it. """
 
-        deck = ['sj', 'sq', 'sk', 'sa', 'hj', 'hq', 'hk', 'ha', 'cj', 'cq', 'ck', 'ca', 'dj', 'dq', 'dk', 'da']
+        single_deck = ['sj', 'sq', 'sk', 'sa', 'hj', 'hq', 'hk', 'ha', 'cj', 'cq', 'ck', 'ca', 'dj', 'dq', 'dk', 'da']
         values = range(2,11)
         for x in values:
             spades = "s" + str(x)
             hearts = "h" + str(x)
             clubs = "c" + str(x)
             diamonds = "d" + str(x)
-            deck.append(spades)
-            deck.append(hearts)
-            deck.append(clubs)
-            deck.append(diamonds)
+            single_deck.append(spades)
+            single_deck.append(hearts)
+            single_deck.append(clubs)
+            single_deck.append(diamonds)
+
+        deck = []
+        for i in range(NUM_DECKS):
+        	deck.extend(single_deck)
+
         return deck
 
     def returnFromDead(deck, deadDeck):
@@ -139,10 +148,15 @@ def mainGame():
         return deck, deadDeck
         
     def deckDeal(deck, deadDeck):
+    	global SHUFFLE_THRESHOLD
         """ Shuffles the deck, takes the top 4 cards off the deck, appends them to the player's and dealer's hands, and
         returns the player's and dealer's hands. """
-        deck = createDeck() #added
-        deadDeck = [] #added
+       
+        if len(deadDeck) > SHUFFLE_THRESHOLD:  #addedS
+        	deck = createDeck() #added
+        	deadDeck = [] #added
+        	SHUFFLE_THRESHOLD = int(NUM_DECKS * 52 * random.uniform(0.25, 0.75)) # added
+
         deck = shuffle(deck)
         dealerHand, playerHand = [], []
 
@@ -517,6 +531,7 @@ def mainGame():
     deck = createDeck()
     # The dead deck will contain cards that have been discarded
     deadDeck = []
+    # Random threshold
 
     # These are default values that will be changed later, but are required to be declared now
     # so that Python doesn't get confused
@@ -582,7 +597,7 @@ def mainGame():
         # Updates the contents of the display
         pygame.display.flip()   
 
-        sleep(2.0)
+        #sleep(2.0)
         if roundEnd:
             on_game_start(handsPlayed + 1, funds)
             deck, deadDeck, playerHand, dealerHand, dCardPos, pCardPos, roundEnd, displayFont, handsPlayed = dealButton.update(True, deck, deadDeck, roundEnd, cardSprite, cards, playerHand, dealerHand, dCardPos, pCardPos, displayFont, playerCards, handsPlayed)
@@ -617,6 +632,8 @@ def mainGame():
             elif action == DOUBLE:
                 deck, deadDeck, roundEnd, funds, playerHand, deadDeck, pCardPos, displayFont, bet, hand_result  = doubleButton.update(True, deck, deadDeck, playerHand, dealerHand, playerCards, cards, pCardPos, roundEnd, cardSprite, funds, bet, displayFont)
             process_result(hand_result)
+        print(len(deck), len(deadDeck))
+        print(SHUFFLE_THRESHOLD)
 
 
 
