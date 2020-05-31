@@ -51,13 +51,16 @@ class QMatrixEntry:
 
 class QMatrix:
 
-    def __init__(self):
-        self.entries = []
-        for p in range(2, 22):
-            for q in range(1, 11):
-                self.entries.append(QMatrixEntry(State(p, q), HIT, 0))
-                self.entries.append(QMatrixEntry(State(p, q), STAND, 0))
-                self.entries.append(QMatrixEntry(State(p, q), DOUBLE, 0))
+    def __init__(self, entries=None):
+        if entries is not None:
+            self.entries = entries
+        else:
+            self.entries = []
+            for p in range(2, 22):
+                for q in range(1, 11):
+                    self.entries.append(QMatrixEntry(State(p, q), HIT, 0))
+                    self.entries.append(QMatrixEntry(State(p, q), STAND, 0))
+                    self.entries.append(QMatrixEntry(State(p, q), DOUBLE, 0))
 
     def get_entry(self, state, action):
         for q_matrix_entry in self.entries:
@@ -84,13 +87,16 @@ class QMatrix:
     def pretty_print(self):
         headers, table = ['', 'HIT', 'STAND', 'DOUBLE'], []
 
-        data = {'states': []}
+        data = {'entries': []}
         for i in range(0, len(self.entries), 3):
             table.append(['state({}, {})'.format(self.entries[i].state.p, self.entries[i].state.q),
                           self.entries[i].reward, self.entries[i + 1].reward, self.entries[i + 2].reward])
 
-            data['states'].append({
-                'state': [self.entries[i].state.p, self.entries[i].state.q],
+            data['entries'].append({
+                'state': {
+                    'p': self.entries[i].state.p,
+                    'q': self.entries[i].state.q
+                },
                 'hit': self.entries[i].reward,
                 'stand': self.entries[i + 1].reward,
                 'double': self.entries[i + 2].reward
@@ -110,7 +116,7 @@ LOG = True
 
 def log(msg):
     if LOG:
-        with open("log.txt", "a") as file: 
+        with open("log.txt", "a") as file:
             file.write("{}\n".format(msg))
 
 
