@@ -52,6 +52,7 @@ class QMatrixEntry:
 class QMatrix:
 
     def __init__(self, entries=None):
+        print entries
         if entries is not None:
             self.entries = entries
         else:
@@ -104,11 +105,25 @@ class QMatrix:
 
         print tabulate(table, headers, tablefmt="fancy_grid")
 
-        with open('./json/q_table.json', 'w') as file:
+        with open('logs/q_table.json', 'w') as file:
             json.dump(data, file)
 
 
-QM = QMatrix()
+# Method called to load a QMatrix from json file
+def load_q_matrix():
+    with open('logs/q_table.json') as json_file:
+        data = json.load(json_file)
+
+        entries = []
+        for entry in data['entries']:
+            entries.append(QMatrixEntry(State(entry['state']['p'], entry['state']['q']), HIT, entry['hit']))
+            entries.append(QMatrixEntry(State(entry['state']['p'], entry['state']['q']), STAND, entry['stand']))
+            entries.append(QMatrixEntry(State(entry['state']['p'], entry['state']['q']), DOUBLE, entry['double']))
+
+        return QMatrix(entries)
+
+
+QM = load_q_matrix()
 previous_state, previous_action, previous_hand_result = None, None, None
 
 LOG = True
@@ -116,7 +131,7 @@ LOG = True
 
 def log(msg):
     if LOG:
-        with open("log.txt", "a") as file:
+        with open("./logs/log.txt", "a") as file:
             file.write("{}\n".format(msg))
 
 
