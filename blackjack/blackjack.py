@@ -16,7 +16,10 @@
 
 from time import sleep
 
-from ia import get_action, process_result, on_game_start
+from aleatorio import get_action, process_result, on_game_start
+# from qlearning import get_action, process_result, on_game_start
+#from qlearning_with_a import get_action, process_result, on_game_start
+#from sarsa_with_a import get_action, process_result, on_game_start
 
 import random
 import os

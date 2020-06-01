@@ -5,8 +5,8 @@ import math
 import random
 
 GAMMA = 0.9
-K = 1.05
-IS_TRAINING = False
+IS_TRAINING = True
+K = 1.05 if IS_TRAINING else 100
 
 # LIST POSSIBLE ACTIONS
 HIT = 0
@@ -86,19 +86,6 @@ class QMatrix:
                 max_reward = current_entry_reward
 
         return max_reward
-
-    def get_best_action(self, state, possible_actions):
-        max_reward = self.get_entry(state, possible_actions[0]).reward
-        best_action = possible_actions[0]
-
-        for action in possible_actions:
-            current_entry_reward = self.get_entry(state, action).reward
-
-            if current_entry_reward > max_reward:
-                max_reward = current_entry_reward
-                best_action = action
-
-        return best_action
 
     def pretty_print(self):
         headers, table = ['', 'HIT', 'STAND', 'DOUBLE'], []
@@ -216,11 +203,8 @@ def get_action(player_hand, dealer_hand):
     log("Current State: {}".format(current_state))
 
     possible_actions = [HIT, STAND, DOUBLE] if len(player_hand) == 2 else [HIT, STAND]
-    if IS_TRAINING:
-        actions_probabilities = [QM.get_probability(current_state, action, possible_actions) for action in possible_actions]
-        current_action = random_choice(possible_actions, actions_probabilities)
-    else:
-        current_action = QM.get_best_action(current_state, possible_actions) 
+    actions_probabilities = [QM.get_probability(current_state, action, possible_actions) for action in possible_actions]
+    current_action = random_choice(possible_actions, actions_probabilities)
     log("Chosen Action: {}".format("HIT" if current_action == 0 else ("STAND" if current_action == 1 else "DOUBLE")))
 
     previous_state = current_state
@@ -248,7 +232,7 @@ def on_game_start(handsPlayed, funds):
 
     log("\nHand #{}: ${}".format(handsPlayed, funds))
     if handsPlayed % 100 == 0:
-        with open("logs/funds.txt", "a") as file: 
+        with open("logs/funds-qlearning.txt", "a") as file: 
             file.write("{}\n".format(funds))
     
 
