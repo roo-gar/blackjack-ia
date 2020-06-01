@@ -6,6 +6,7 @@ import random
 
 GAMMA = 0.9
 K = 1.05
+IS_TRAINING = False
 
 # LIST POSSIBLE ACTIONS
 HIT = 0
@@ -20,6 +21,7 @@ PLAYER_LOST_DOUBLE = 3
 PLAYER_WON_DOUBLE = 4
 DRAW = 5
 
+Q_STORAGE_FILE = "q_table_qlearning.json"
 
 class State:
 
@@ -85,6 +87,19 @@ class QMatrix:
 
         return max_reward
 
+    def get_best_action(self, state, possible_actions):
+        max_reward = self.get_entry(state, possible_actions[0]).reward
+        best_action = possible_actions[0]
+
+        for action in possible_actions:
+            current_entry_reward = self.get_entry(state, action).reward
+
+            if current_entry_reward > max_reward:
+                max_reward = current_entry_reward
+                best_action = action
+
+        return best_action
+
     def pretty_print(self):
         headers, table = ['', 'HIT', 'STAND', 'DOUBLE'], []
 
@@ -105,22 +120,25 @@ class QMatrix:
 
         print tabulate(table, headers, tablefmt="fancy_grid")
 
-        with open('logs/q_table.json', 'w') as file:
+        with open('logs/' + Q_STORAGE_FILE, 'w') as file:
             json.dump(data, file)
 
 
 # Method called to load a QMatrix from json file
 def load_q_matrix():
-    with open('logs/q_table.json') as json_file:
-        data = json.load(json_file)
+    try:
+        with open('logs/' + Q_STORAGE_FILE) as json_file:
+            data = json.load(json_file)
 
-        entries = []
-        for entry in data['entries']:
-            entries.append(QMatrixEntry(State(entry['state']['p'], entry['state']['q']), HIT, entry['hit']))
-            entries.append(QMatrixEntry(State(entry['state']['p'], entry['state']['q']), STAND, entry['stand']))
-            entries.append(QMatrixEntry(State(entry['state']['p'], entry['state']['q']), DOUBLE, entry['double']))
+            entries = []
+            for entry in data['entries']:
+                entries.append(QMatrixEntry(State(entry['state']['p'], entry['state']['q']), HIT, entry['hit']))
+                entries.append(QMatrixEntry(State(entry['state']['p'], entry['state']['q']), STAND, entry['stand']))
+                entries.append(QMatrixEntry(State(entry['state']['p'], entry['state']['q']), DOUBLE, entry['double']))
 
-        return QMatrix(entries)
+            return QMatrix(entries)
+    except:
+        return QMatrix()
 
 
 QM = load_q_matrix()
@@ -198,8 +216,11 @@ def get_action(player_hand, dealer_hand):
     log("Current State: {}".format(current_state))
 
     possible_actions = [HIT, STAND, DOUBLE] if len(player_hand) == 2 else [HIT, STAND]
-    actions_probabilities = [QM.get_probability(current_state, action, possible_actions) for action in possible_actions]
-    current_action = random_choice(possible_actions, actions_probabilities)
+    if IS_TRAINING:
+        actions_probabilities = [QM.get_probability(current_state, action, possible_actions) for action in possible_actions]
+        current_action = random_choice(possible_actions, actions_probabilities)
+    else:
+        current_action = QM.get_best_action(current_state, possible_actions) 
     log("Chosen Action: {}".format("HIT" if current_action == 0 else ("STAND" if current_action == 1 else "DOUBLE")))
 
     previous_state = current_state
@@ -220,17 +241,16 @@ def on_game_start(handsPlayed, funds):
     global K
 
     if handsPlayed % 100 == 0:
-        K += 0.03
+        K += 0.01
         print("Table hand " + str(handsPlayed))
         QM.pretty_print()
         # sleep(5)
 
     log("\nHand #{}: ${}".format(handsPlayed, funds))
-    """
-    if handsPlayed % 50 == 0:
-        with open("funds.txt", "a") as file: 
+    if handsPlayed % 100 == 0:
+        with open("logs/funds.txt", "a") as file: 
             file.write("{}\n".format(funds))
-    """
+    
 
 
 """ random strategy

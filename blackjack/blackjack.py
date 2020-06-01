@@ -563,7 +563,7 @@ def mainGame():
     hand_result = None
 
     # The default funds start at $100.00, and the initial bet defaults to $10.00
-    funds = 6000.00
+    funds = 10000.00
     bet = 10.00
 
     # This is a counter that counts the number of rounds played in a given session
@@ -670,8 +670,8 @@ def mainGame():
                     True, deck, deadDeck, playerHand, dealerHand, playerCards, cards, pCardPos, roundEnd, cardSprite,
                     funds, bet, displayFont)
             process_result(hand_result)
-        print(len(deck), len(deadDeck))
-        print(SHUFFLE_THRESHOLD)
+        #print(len(deck), len(deadDeck))
+        #print(SHUFFLE_THRESHOLD)
 
     ###### MAIN GAME LOOP ENDS ######
 
