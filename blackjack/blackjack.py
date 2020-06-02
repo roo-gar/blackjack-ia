@@ -16,10 +16,10 @@
 
 from time import sleep
 
-from aleatorio import get_action, process_result, on_game_start
-# from qlearning import get_action, process_result, on_game_start
+#from aleatorio import get_action, process_result, on_game_start
+#from qlearning import get_action, process_result, on_game_start
 #from qlearning_with_a import get_action, process_result, on_game_start
-#from sarsa_with_a import get_action, process_result, on_game_start
+from sarsa_with_a import get_action, process_result, on_game_start
 
 import random
 import os
@@ -566,7 +566,7 @@ def mainGame():
     hand_result = None
 
     # The default funds start at $100.00, and the initial bet defaults to $10.00
-    funds = 10000.00
+    funds = 5000.00
     bet = 10.00
 
     # This is a counter that counts the number of rounds played in a given session

@@ -26,7 +26,7 @@ def process_result(hand_result):
     pass
 
 def on_game_start(handsPlayed, funds):
-    if handsPlayed % 50 == 0:
+    if handsPlayed % 1000 == 0:
         with open("logs/funds-random.txt", "a") as file: 
             file.write("{}\n".format(funds))
 

@@ -5,7 +5,7 @@ import math
 import random
 
 GAMMA = 0.9
-IS_TRAINING = True
+IS_TRAINING = False
 K = 1.05 if IS_TRAINING else 100
 
 
@@ -39,11 +39,11 @@ class State:
 
 class QMatrixEntry:
 
-    def __init__(self, state, action, reward):
+    def __init__(self, state, action, reward, visits=0):
         self.state = state
         self.action = action
         self.reward = reward
-        self.visits = 0
+        self.visits = visits
 
     def visit(self):
         self.visits += 1
@@ -131,9 +131,9 @@ def load_q_matrix():
 
             entries = []
             for entry in data['entries']:
-                entries.append(QMatrixEntry(State(entry['state']['p'], entry['state']['q']), HIT, entry['hit']))
-                entries.append(QMatrixEntry(State(entry['state']['p'], entry['state']['q']), STAND, entry['stand']))
-                entries.append(QMatrixEntry(State(entry['state']['p'], entry['state']['q']), DOUBLE, entry['double']))
+                entries.append(QMatrixEntry(State(entry['state']['p'], entry['state']['q']), HIT, entry['hit'], 10))
+                entries.append(QMatrixEntry(State(entry['state']['p'], entry['state']['q']), STAND, entry['stand'], 10))
+                entries.append(QMatrixEntry(State(entry['state']['p'], entry['state']['q']), DOUBLE, entry['double'], 10))
 
             return QMatrix(entries)
     except:
@@ -247,7 +247,7 @@ def on_game_start(handsPlayed, funds):
         # sleep(5)
 
     log("\nHand #{}: ${}".format(handsPlayed, funds))
-    if handsPlayed % 100 == 0:
+    if handsPlayed % 1000 == 0:
         with open("logs/funds-qlearning-with-a.txt", "a") as file: 
             file.write("{}\n".format(funds))
     
